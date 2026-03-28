@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from dotenv import load_dotenv 
+load_dotenv()
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -33,7 +34,13 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_db():
-    return psycopg2.connect(**DB_CONFIG)
+    return psycopg2.connect(
+        host=str(os.getenv("DB_HOST")),
+        port=int(os.getenv("DB_PORT", 5432)),
+        dbname=str(os.getenv("DB_NAME")),
+        user=str(os.getenv("DB_USER")),
+        password=str(os.getenv("DB_PASSWORD"))
+    )
 
 def create_token(data: dict):
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
