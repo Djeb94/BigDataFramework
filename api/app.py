@@ -10,7 +10,6 @@ st.set_page_config(page_title="Spotify Data Analytics", layout="wide")
 st.title("Spotify Data Analytics")
 st.markdown("Analyse des features audio qui maximisent la popularite selon les decennies")
 
-# ── Auth ──────────────────────────────────────────────────────────────────────
 @st.cache_data
 def get_token():
     r = requests.post(f"{API_URL}/token", data={"username": "admin", "password": "secret"})
@@ -19,7 +18,6 @@ def get_token():
 token = get_token()
 headers = {"Authorization": f"Bearer {token}"}
 
-# ── Fetch data ────────────────────────────────────────────────────────────────
 @st.cache_data
 def fetch(endpoint, size=100):
     r = requests.get(f"{API_URL}/{endpoint}?page=1&size={size}", headers=headers)
@@ -30,14 +28,18 @@ df_tracks  = fetch("top-tracks", size=100)
 df_genre   = fetch("genre-popularity", size=50)
 df_artists = fetch("top-artists", size=50)
 
-# ── Graphique 1 : Evolution features par decennie ────────────────────────────
-st.subheader("Evolution des features audio par decennie")
+#Graphique 1 évolution features par decennie
+st.subheader("Evolution des features audio par decennie (normalisees)")
+
+df_decade_norm = df_decade.copy()
+df_decade_norm["avg_popularity"] = df_decade_norm["avg_popularity"] / 100
+
 fig1 = px.line(
-    df_decade,
+    df_decade_norm,
     x="decade",
     y=["avg_popularity", "avg_danceability", "avg_energy"],
     markers=True,
-    labels={"value": "Score moyen", "decade": "Decennie", "variable": "Feature"},
+    labels={"value": "Score (0-1)", "decade": "Decennie", "variable": "Feature"},
     color_discrete_map={
         "avg_popularity":   "#1DB954",
         "avg_danceability": "#FF6B6B",
@@ -45,8 +47,7 @@ fig1 = px.line(
     }
 )
 st.plotly_chart(fig1, use_container_width=True)
-
-# ── Graphique 2 : Top genres par popularite ───────────────────────────────────
+#Graphique 2 top genres par popularite
 st.subheader("Top 20 genres par popularite moyenne")
 df_genre_top = df_genre.head(20)
 fig2 = px.bar(
@@ -61,7 +62,7 @@ fig2 = px.bar(
 fig2.update_layout(yaxis=dict(autorange="reversed"))
 st.plotly_chart(fig2, use_container_width=True)
 
-# ── Graphique 3 : Danceability vs Energy (top tracks) ────────────────────────
+#graphique 3 danceability vs Energy (top tracks)
 st.subheader("Danceability vs Energy des top tracks")
 fig3 = px.scatter(
     df_tracks,
@@ -75,7 +76,7 @@ fig3 = px.scatter(
 )
 st.plotly_chart(fig3, use_container_width=True)
 
-# ── Tableau top artistes ──────────────────────────────────────────────────────
+#Tableau top artistes par popularite
 st.subheader("Top artistes")
 st.dataframe(
     df_artists[["artist_name", "artist_popularity", "artist_followers", "nb_tracks", "avg_track_popularity"]]
