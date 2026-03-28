@@ -48,7 +48,7 @@ try:
     df.cache()
     log.info("Silver charge : {} lignes".format(df.count()))
 
-    # ── Datamart 1 : features audio par décennie ──────────────────────────────
+    #Datamart 1 features audios par decennie
     log.info("Datamart 1 : audio par decennie")
     dm_audio = (
         df.filter(F.col("decade").isNotNull() & (F.col("decade") >= 1920))
@@ -66,7 +66,7 @@ try:
     dm_audio.show()
     write_pg(dm_audio, "dm_audio_by_decade")
 
-    # ── Datamart 2 : top tracks popularité > 70 ───────────────────────────────
+    # Datamart 2 top tracks popularité > 70
     log.info("Datamart 2 : top tracks")
     dm_top = (
         df.filter(F.col("popularity") > 70)
@@ -81,7 +81,7 @@ try:
     dm_top.show(5)
     write_pg(dm_top, "dm_top_tracks")
 
-    # ── Datamart 3 : popularité par genre ─────────────────────────────────────
+    #Datamart 3 popularité par genre 
     log.info("Datamart 3 : popularite par genre")
     dm_genre = (
         df.filter(F.col("artist_genres").isNotNull() & (F.col("artist_genres") != "[]"))
@@ -103,7 +103,7 @@ try:
     dm_genre.show(5)
     write_pg(dm_genre, "dm_genre_popularity")
 
-    # ── Datamart 4 : top artistes ─────────────────────────────────────────────
+    #Datamart 4 top artistes
     log.info("Datamart 4 : top artistes")
     dm_artists = (
         df.filter(F.col("artist_name").isNotNull())

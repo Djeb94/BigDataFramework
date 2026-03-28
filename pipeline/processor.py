@@ -33,29 +33,23 @@ spark.sparkContext.setLogLevel("WARN")
 today = date.today()
 
 try:
-    # ── Lecture RAW ───────────────────────────────────────────────────────────
+    #Lecture RAW
     log.info("Lecture tracks raw")
     df_tracks = spark.read.parquet("{}/tracks".format(input_raw))
 
     log.info("Lecture artists raw")
     df_artists = spark.read.parquet("{}/artists".format(input_raw))
 
-    # ── 5 Règles de validation ────────────────────────────────────────────────
     log.info("Validation des donnees")
     before = df_tracks.count()
 
-    # Règle 1 : id non null
     df_tracks = df_tracks.filter(F.col("id").isNotNull())
-    # Règle 2 : name non null
     df_tracks = df_tracks.filter(F.col("name").isNotNull())
-    # Règle 3 : popularité entre 0 et 100
     df_tracks = df_tracks.filter(
         (F.col("popularity").cast("int") >= 0) &
         (F.col("popularity").cast("int") <= 100)
     )
-    # Règle 4 : durée > 0
     df_tracks = df_tracks.filter(F.col("duration_ms").cast("long") > 0)
-    # Règle 5 : année de release valide
     df_tracks = df_tracks.filter(
         F.col("release_date").isNotNull() &
         (F.length(F.col("release_date")) >= 4)
@@ -64,7 +58,6 @@ try:
     after = df_tracks.count()
     log.info("Lignes apres validation : {} (supprimees : {})".format(after, before - after))
 
-    # ── Cast des colonnes ─────────────────────────────────────────────────────
     df_tracks = (
         df_tracks
         .withColumn("popularity",    F.col("popularity").cast("int"))
@@ -82,12 +75,11 @@ try:
         .withColumn("followers",  F.col("followers").cast("double"))
     )
 
-    # ── Cache ─────────────────────────────────────────────────────────────────
     df_tracks.cache()
     df_artists.cache()
     log.info("Cache applique sur tracks et artists")
 
-    # ── Jointure tracks + artists ─────────────────────────────────────────────
+    #ointure tracks + artists
     log.info("Jointure tracks + artists")
     df_joined = (
         df_tracks
@@ -105,7 +97,7 @@ try:
         )
     )
 
-    # ── Agrégation : popularité moyenne par décennie ──────────────────────────
+    #Agrégation ppopularité moyenne par décennie 
     log.info("Agregation par decennie")
     df_agg = (
         df_joined
@@ -120,12 +112,11 @@ try:
     )
     df_agg.show(10)
 
-    # ── Window function : rank par popularité dans chaque décennie ────────────
+    #rank par popularité dans chaque décennie
     log.info("Window function : rank popularite par decennie")
     window_spec = Window.partitionBy("decade").orderBy(F.desc("popularity"))
     df_joined = df_joined.withColumn("rank_in_decade", F.rank().over(window_spec))
 
-    # ── Écriture silver ───────────────────────────────────────────────────────
     log.info("Ecriture silver")
     (
         df_joined
